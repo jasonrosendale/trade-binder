@@ -46,14 +46,24 @@
     /* Sticky column headers */
     thead.table-light th { position: sticky; top: 0; z-index: 2; }
 
-    /* Hide Set Name column on mobile */
+    /* Mobile column layout: fixed widths so Name gets the remaining space */
     @media (max-width: 767.98px) {
       .col-setname { display: none !important; }
+      table { table-layout: fixed; width: 100%; }
+      th[data-col="releaseDate"] { width: 3.5em; }
+      th[data-col="setCode"]     { width: 3em; }
+      th[data-col="rarity"]      { width: 3em; }
+      th[data-col="colors"]      { width: 5em; }
+      th[data-col="available"]   { width: 4.5em; }
+      th[data-col="price"]       { width: 4.5em; }
+      /* clip long header text rather than expanding the column */
+      thead th { overflow: hidden; }
+      .col-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     }
 
-    /* Truncate card names on mobile */
-    @media (max-width: 767.98px) {
-      .col-name { max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* Portrait phone: hide the less-important columns to leave room for the name */
+    @media (max-width: 767.98px) and (orientation: portrait) {
+      .col-released, .col-rarity, .col-color { display: none; }
     }
 
     /* Bigger touch targets for toggle buttons on mobile */
@@ -234,12 +244,12 @@
           <thead class="table-light">
             <tr>
               <th class="sortable" data-col="name">Name <span class="sort-icon"></span></th>
-              <th class="sortable" data-col="releaseDate">Released <span class="sort-icon"></span></th>
+              <th class="sortable col-released" data-col="releaseDate">Released <span class="sort-icon"></span></th>
               <th class="sortable" data-col="setCode">Set <span class="sort-icon"></span></th>
               <th class="sortable col-setname" data-col="setName">Set Name <span class="sort-icon"></span></th>
-              <th class="sortable" data-col="rarity">Rarity <span class="sort-icon"></span></th>
-              <th class="sortable" data-col="colors">Color <span class="sort-icon"></span></th>
-              <th class="sortable text-end" data-col="available">Available <span class="sort-icon"></span></th>
+              <th class="sortable col-rarity" data-col="rarity">Rarity <span class="sort-icon"></span></th>
+              <th class="sortable col-color" data-col="colors">Color <span class="sort-icon"></span></th>
+              <th class="sortable text-end" data-col="available">Avail<span class="d-none d-md-inline">able</span> <span class="sort-icon"></span></th>
               <th class="sortable text-end" data-col="price">Price <span class="sort-icon"></span></th>
             </tr>
           </thead>
@@ -256,11 +266,11 @@
           <thead class="table-light">
             <tr>
               <th class="sortable" data-col="name">Name <span class="sort-icon"></span></th>
-              <th class="sortable" data-col="releaseDate">Released <span class="sort-icon"></span></th>
+              <th class="sortable col-released" data-col="releaseDate">Released <span class="sort-icon"></span></th>
               <th class="sortable" data-col="setCode">Set <span class="sort-icon"></span></th>
               <th class="sortable col-setname" data-col="setName">Set Name <span class="sort-icon"></span></th>
-              <th class="sortable" data-col="rarity">Rarity <span class="sort-icon"></span></th>
-              <th class="sortable" data-col="colors">Color <span class="sort-icon"></span></th>
+              <th class="sortable col-rarity" data-col="rarity">Rarity <span class="sort-icon"></span></th>
+              <th class="sortable col-color" data-col="colors">Color <span class="sort-icon"></span></th>
               <th class="sortable text-end" data-col="price">Price <span class="sort-icon"></span></th>
             </tr>
           </thead>
@@ -416,11 +426,11 @@ function render() {
     const avail   = isTrade ? `<td class="text-end fw-semibold">${c.available}</td>` : '';
     return `<tr>
       <td class="fw-medium col-name" data-name="${esc(c.name)}" data-setcode="${esc(c.setCode)}">${esc(c.name)}</td>
-      <td class="text-muted small font-monospace">${esc((c.releaseDate||'').slice(0,4))}</td>
+      <td class="text-muted small font-monospace col-released">${esc((c.releaseDate||'').slice(0,4))}</td>
       <td class="font-monospace small">${esc(c.setCode)}</td>
       <td class="text-muted small col-setname">${esc(c.setName||'')}</td>
-      <td>${rarityBadge(c.rarity)}</td>
-      <td>${colorBadges(c.colors)}</td>
+      <td class="col-rarity">${rarityBadge(c.rarity)}</td>
+      <td class="col-color">${colorBadges(c.colors)}</td>
       ${avail}
       <td class="text-end text-muted small font-monospace">${price}</td>
     </tr>`;

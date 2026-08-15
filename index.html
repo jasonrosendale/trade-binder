@@ -287,13 +287,11 @@
   <img id="card-tip-img" alt="" style="width:200px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5)">
 </div>
 
-<script src="./index.js?v=07d58b06"></script>
+<script src="./index.js?v=004ee23d"></script>
 <script>
-// ── Derived index (TRADE and WANTED come from trade-binder-data.js) ─────────
-// Unique sets across both tabs, sorted by name, for autocomplete
-const SETS = [...new Map(
-  [...TRADE, ...WANTED].map(c => [c.setCode, c.setName])
-).entries()]
+// ── Derived index (SET_NAMES / TRADE / WANTED come from index.js) ───────────
+// Unique sets sorted by name, for autocomplete — built from SET_NAMES lookup.
+const SETS = Object.entries(SET_NAMES)
   .map(([code, name]) => ({code, name}))
   .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -356,7 +354,7 @@ function matches(card, f) {
       if (card.setCode.toUpperCase() !== f.set)                        return false;
     } else {
       if (!card.setCode.toUpperCase().includes(f.set)
-       && !(card.setName||'').toUpperCase().includes(f.set))           return false;
+       && !(SET_NAMES[card.setCode]||'').toUpperCase().includes(f.set)) return false;
     }
   }
   if (!f.rarities.has(card.rarity))                                   return false;
@@ -400,7 +398,8 @@ function matches(card, f) {
 // ── Sorting ────────────────────────────────────────────────────────────────
 function sorted(data, col, dir) {
   return [...data].sort((a, b) => {
-    let av = a[col], bv = b[col];
+    let av = col === 'setName' ? (SET_NAMES[a.setCode] || '') : a[col];
+    let bv = col === 'setName' ? (SET_NAMES[b.setCode] || '') : b[col];
     if (col === 'price') { av = av ?? 0; bv = bv ?? 0; }
     if (av == null && bv == null) return 0;
     if (av == null) return dir;        // nulls always to bottom
@@ -428,7 +427,7 @@ function render() {
       <td class="fw-medium col-name" data-name="${esc(c.name)}" data-setcode="${esc(c.setCode)}">${esc(c.name)}</td>
       <td class="text-muted small font-monospace col-released">${esc((c.releaseDate||'').slice(0,4))}</td>
       <td class="font-monospace small">${esc(c.setCode)}</td>
-      <td class="text-muted small col-setname">${esc(c.setName||'')}</td>
+      <td class="text-muted small col-setname">${esc(SET_NAMES[c.setCode]||'')}</td>
       <td class="col-rarity">${rarityBadge(c.rarity)}</td>
       <td class="col-color">${colorBadges(c.colors)}</td>
       ${avail}

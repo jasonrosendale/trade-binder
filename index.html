@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Trade Binder — 2026-08-17</title>
+  <title>Trade Binder — 2026-08-18</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <style>
     body { font-size: .875rem; }
@@ -206,7 +206,7 @@
     </div>
 
     <div class="mt-4 pt-3 border-top text-muted" style="font-size:.72rem">
-      Generated 2026-08-17
+      Generated 2026-08-18
     </div>
   </div>
 
@@ -287,7 +287,7 @@
   <img id="card-tip-img" alt="" style="width:200px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5)">
 </div>
 
-<script src="./index.js?v=689e03d0"></script>
+<script src="./index.js?v=ecb0be24"></script>
 <script>
 // ── Derived index (SET_NAMES / TRADE / WANTED come from index.js) ───────────
 // Unique sets sorted by name, for autocomplete — built from SET_NAMES lookup.
@@ -448,6 +448,99 @@ function render() {
     th.classList.remove('sort-asc', 'sort-desc');
     if (th.dataset.col === srt.col) th.classList.add(srt.dir === 1 ? 'sort-asc' : 'sort-desc');
   });
+
+  syncURL();
+}
+
+// ── URL state ──────────────────────────────────────────────────────────────
+function syncURL() {
+  const p  = new URLSearchParams();
+  const v  = id => document.getElementById(id).value.trim();
+
+  if (activeTab !== 'trade') p.set('tab', activeTab);
+
+  if (v('f-name'))    p.set('name',    v('f-name'));
+  if (v('f-set'))   { p.set('set',     v('f-set')); if (setExact) p.set('setExact', '1'); }
+  if (v('f-type'))    p.set('type',    v('f-type'));
+  if (v('f-subtype')) p.set('subtype', v('f-subtype'));
+  if (v('f-pmin'))    p.set('pmin',    v('f-pmin'));
+  if (v('f-pmax'))    p.set('pmax',    v('f-pmax'));
+
+  const cm = document.getElementById('color-mode').value;
+  if (cm !== 'atmost') p.set('colorMode', cm);
+
+  if (rarityFilter.size < 4)
+    p.set('rarity', ['common','uncommon','rare','mythic']
+      .filter(r => rarityFilter.has(r)).map(r => r[0].toUpperCase()).join(''));
+
+  const defColors = ['W','U','B','R','G'];
+  if (!(selectedColors.size === 5 && defColors.every(c => selectedColors.has(c))))
+    p.set('colors', [...selectedColors].sort().join(''));
+
+  if (countFilter.size < 4)
+    p.set('counts', [...countFilter].join(','));
+
+  const defSort = { trade: {col:'name',dir:1}, wanted: {col:'price',dir:-1} };
+  for (const [tab, def] of Object.entries(defSort)) {
+    const s = sortState[tab];
+    if (s.col !== def.col || s.dir !== def.dir)
+      p.set('sort_' + tab, s.col + '.' + (s.dir === 1 ? 'asc' : 'desc'));
+  }
+
+  const qs = p.toString();
+  history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+}
+
+function decodeURL() {
+  const p = new URLSearchParams(location.search);
+  if (!p.toString()) return;
+
+  if (p.has('tab'))      activeTab = p.get('tab');
+  if (p.has('name'))     document.getElementById('f-name').value    = p.get('name');
+  if (p.has('set'))    { document.getElementById('f-set').value     = p.get('set');
+                         setExact = p.get('setExact') === '1'; }
+  if (p.has('type'))     document.getElementById('f-type').value    = p.get('type');
+  if (p.has('subtype'))  document.getElementById('f-subtype').value = p.get('subtype');
+  if (p.has('pmin'))     document.getElementById('f-pmin').value    = p.get('pmin');
+  if (p.has('pmax'))     document.getElementById('f-pmax').value    = p.get('pmax');
+  if (p.has('colorMode')) document.getElementById('color-mode').value = p.get('colorMode');
+
+  if (p.has('rarity')) {
+    const MAP = {C:'common', U:'uncommon', R:'rare', M:'mythic'};
+    rarityFilter = new Set(p.get('rarity').split('').map(c => MAP[c]).filter(Boolean));
+  }
+  if (p.has('colors'))
+    selectedColors = new Set(p.get('colors').toUpperCase().split('').filter(Boolean));
+  if (p.has('counts'))
+    countFilter = new Set(p.get('counts').split(',').filter(Boolean));
+
+  for (const tab of ['trade', 'wanted']) {
+    if (!p.has('sort_' + tab)) continue;
+    const [col, dir] = p.get('sort_' + tab).split('.');
+    if (col) sortState[tab] = { col, dir: dir === 'desc' ? -1 : 1 };
+  }
+
+  // Sync button/pip visuals from the decoded state variables
+  document.querySelectorAll('.filter-rarity').forEach(b => {
+    const on = rarityFilter.has(b.dataset.val);
+    b.classList.toggle('active', on);
+    b.classList.toggle(b.dataset.cls, on);
+    b.classList.toggle('btn-outline-secondary', !on);
+  });
+  document.querySelectorAll('.filter-count').forEach(b => {
+    const on = countFilter.has(b.dataset.val);
+    b.classList.toggle('active', on);
+    b.classList.toggle(b.dataset.cls, on);
+    b.classList.toggle('btn-outline-secondary', !on);
+  });
+  document.querySelectorAll('.pip[data-c]').forEach(pip =>
+    pip.classList.toggle('off', !selectedColors.has(pip.dataset.c)));
+
+  // Activate the right tab
+  document.querySelectorAll('[data-tab]').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === activeTab));
+  document.getElementById('pane-trade').style.display  = activeTab === 'trade'  ? '' : 'none';
+  document.getElementById('pane-wanted').style.display = activeTab === 'wanted' ? '' : 'none';
 }
 
 // ── Sort headers ───────────────────────────────────────────────────────────
@@ -696,6 +789,7 @@ function closeDrawer() {
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
+decodeURL();
 render();
 </script>
 </body>
